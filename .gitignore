@@ -12,6 +12,9 @@
 
 # Firebase service account key
 **/firebase-key.json
+
+# Local notes
+NOTES.md
 S
 # User-specific files
 *.rsuser
