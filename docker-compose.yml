@@ -1,0 +1,42 @@
+services:
+  grocery-api:
+    build:
+      context: .
+      dockerfile: GroceryPromoApi/Dockerfile
+    container_name: grocery-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__Default=Host=grocery-postgres;Port=5432;Database=grocery_db;Username=CHANGE_ME;Password=CHANGE_ME
+    depends_on:
+      grocery-postgres:
+        condition: service_healthy
+    networks:
+      - grocery-network
+
+  grocery-postgres:
+    image: postgres:16
+    container_name: grocery-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: grocery_db
+      POSTGRES_USER: CHANGE_ME
+      POSTGRES_PASSWORD: CHANGE_ME
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grocery -d grocery_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - grocery-network
+
+volumes:
+  postgres-data:
+
+networks:
+  grocery-network:
+    driver: bridge
