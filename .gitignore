@@ -15,6 +15,9 @@
 
 # Local notes
 NOTES.md
+
+# Docker secrets
+docker-compose.override.yml
 S
 # User-specific files
 *.rsuser
