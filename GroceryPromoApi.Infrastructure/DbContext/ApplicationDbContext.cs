@@ -15,5 +15,4 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
     public DbSet<FavouriteProduct> Favourites => Set<FavouriteProduct>();
     public DbSet<PreferredStore> PreferredStores => Set<PreferredStore>();
     public DbSet<Notification> Notifications => Set<Notification>();
-    public DbSet<SyncState> SyncStates => Set<SyncState>();
 }
