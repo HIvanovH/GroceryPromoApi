@@ -1,11 +1,44 @@
 using GroceryPromoApi.Application.Interfaces.Repositories;
 using GroceryPromoApi.Domain.Entities;
+using GroceryPromoApi.Infrastructure.DbContext;
+using Microsoft.EntityFrameworkCore;
 
 namespace GroceryPromoApi.Infrastructure.Database.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    public Task AddAsync(User user) => throw new NotImplementedException();
-    public Task UpdateAsync(User user) => throw new NotImplementedException();
-    public Task DeleteAsync(User user) => throw new NotImplementedException();
+    private readonly ApplicationDbContext _db;
+
+    public UserRepository(ApplicationDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _db.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _db.Users.FindAsync([id], cancellationToken);
+    }
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+    {
+        await _db.Users.AddAsync(user, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
+    {
+        _db.Users.Update(user);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+    {
+        _db.Users.Remove(user);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 }
