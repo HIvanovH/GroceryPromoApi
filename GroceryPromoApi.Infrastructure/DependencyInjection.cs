@@ -1,3 +1,6 @@
+using GroceryPromoApi.Application.Interfaces.Repositories;
+using GroceryPromoApi.Application.Options;
+using GroceryPromoApi.Infrastructure.Database.Repositories;
 using GroceryPromoApi.Infrastructure.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +14,11 @@ public static class DependencyInjection
     {
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Default")));
+
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserSessionRepository, UserSessionRepository>();
 
         return services;
     }
