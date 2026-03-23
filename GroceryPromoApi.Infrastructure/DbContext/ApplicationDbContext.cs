@@ -8,6 +8,7 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<Supermarket> Supermarkets => Set<Supermarket>();
     public DbSet<Brochure> Brochures => Set<Brochure>();
     public DbSet<Product> Products => Set<Product>();
