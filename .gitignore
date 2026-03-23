@@ -13,6 +13,9 @@
 # Firebase service account key
 **/firebase-key.json
 
+# Docker override with real secrets
+docker-compose.override.yml
+
 # Local notes
 NOTES.md
 S
