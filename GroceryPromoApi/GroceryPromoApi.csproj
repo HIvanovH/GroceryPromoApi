@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GroceryPromoApi.Application\GroceryPromoApi.Application.csproj" />
     <ProjectReference Include="..\GroceryPromoApi.Infrastructure\GroceryPromoApi.Infrastructure.csproj" />
+    <ProjectReference Include="..\GroceryPromoApi.ServiceDefaults\GroceryPromoApi.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
