@@ -31,6 +31,7 @@ public class AuthService : IAuthService
         var email = request.Email.Trim().ToLower();
 
         var existing = await _userRepository.GetByEmailAsync(email, cancellationToken);
+
         if (existing is not null)
             throw new ConflictException("An account with this email already exists.");
 
@@ -184,7 +185,9 @@ public class AuthService : IAuthService
     }
 
     private static string GenerateRawRefreshToken()
-        => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+    }
 
     private static string HashToken(string token)
     {
