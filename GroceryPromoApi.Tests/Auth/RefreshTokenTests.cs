@@ -4,6 +4,7 @@ using GroceryPromoApi.Application.Options;
 using GroceryPromoApi.Application.Services;
 using GroceryPromoApi.Domain.Entities;
 using GroceryPromoApi.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using System.Security.Cryptography;
@@ -28,7 +29,7 @@ namespace GroceryPromoApi.Tests.Auth
                 RefreshTokenExpirationDays = 30
             });
 
-            _authService = new AuthService(_userRepository.Object, _sessionRepository.Object, jwtOptions);
+            _authService = new AuthService(_userRepository.Object, _sessionRepository.Object, jwtOptions, Mock.Of<ILogger<AuthService>>());
         }
 
         private static string HashToken(string token)
@@ -142,13 +143,12 @@ namespace GroceryPromoApi.Tests.Auth
             _sessionRepository.Setup(r => r.GetByPreviousRefreshTokenHashAsync(hash, It.IsAny<CancellationToken>()))
                               .ReturnsAsync((UserSession?)null);
 
-            // BUG: currently throws NullReferenceException instead of UnauthorizedException
-            await Assert.ThrowsAsync<NullReferenceException>(() =>
+            await Assert.ThrowsAsync<UnauthorizedException>(() =>
                 _authService.RefreshTokenAsync(new RefreshRequest { RefreshToken = rawToken }));
         }
 
         [Fact]
-        public async Task Refresh_ReplayedToken_ShouldDeleteAllSessions_ButBugPreventsIt()
+        public async Task Refresh_ReplayedToken_DeletesAllSessionsAndThrowsUnauthorizedException()
         {
             var rawToken = GenerateRawToken();
             var hash = HashToken(rawToken);
@@ -170,11 +170,10 @@ namespace GroceryPromoApi.Tests.Auth
             _sessionRepository.Setup(r => r.DeleteAllForUserAsync(userId, It.IsAny<CancellationToken>()))
                               .Returns(Task.CompletedTask);
 
-            // BUG: inverted condition means DeleteAllForUserAsync is never called on replay
             await Assert.ThrowsAsync<UnauthorizedException>(() =>
                 _authService.RefreshTokenAsync(new RefreshRequest { RefreshToken = rawToken }));
 
-            _sessionRepository.Verify(r => r.DeleteAllForUserAsync(userId, It.IsAny<CancellationToken>()), Times.Never);
+            _sessionRepository.Verify(r => r.DeleteAllForUserAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

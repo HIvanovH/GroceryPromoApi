@@ -4,13 +4,9 @@ using GroceryPromoApi.Application.Options;
 using GroceryPromoApi.Application.Services;
 using GroceryPromoApi.Domain.Entities;
 using GroceryPromoApi.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GroceryPromoApi.Tests.Auth
 {
@@ -31,7 +27,7 @@ namespace GroceryPromoApi.Tests.Auth
                 RefreshTokenExpirationDays = 30
             });
 
-            _authService = new AuthService(_userRepository.Object, _sessionRepository.Object, jwtOptions);
+            _authService = new AuthService(_userRepository.Object, _sessionRepository.Object, jwtOptions, Mock.Of<ILogger<AuthService>>());
         }
 
         [Fact]
@@ -116,9 +112,16 @@ namespace GroceryPromoApi.Tests.Auth
             _userRepository.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
+            var attempts = 0;
+            _userRepository.Setup(r => r.IncrementFailedAttemptsAsync(user.Id, It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(() => ++attempts);
+
             User? capturedUser = null;
             _userRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                      .Callback<User, CancellationToken>((u, _) => capturedUser = u)
+                     .Returns(Task.CompletedTask);
+
+            _userRepository.Setup(r => r.ResetFailedAttemptsAsync(user.Id, It.IsAny<CancellationToken>()))
                      .Returns(Task.CompletedTask);
 
             _sessionRepository.Setup(r => r.AddAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))

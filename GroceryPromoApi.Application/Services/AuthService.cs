@@ -8,6 +8,7 @@ using GroceryPromoApi.Application.Interfaces.Services;
 using GroceryPromoApi.Application.Options;
 using GroceryPromoApi.Domain.Entities;
 using GroceryPromoApi.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -18,22 +19,27 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly IUserSessionRepository _sessionRepository;
     private readonly JwtOptions _jwt;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IUserRepository userRepository, IUserSessionRepository sessionRepo, IOptions<JwtOptions> jwt)
+    public AuthService(IUserRepository userRepository, IUserSessionRepository sessionRepo, IOptions<JwtOptions> jwt, ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _sessionRepository = sessionRepo;
         _jwt = jwt.Value;
+        _logger = logger;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        var email = request.Email.Trim().ToLower();
+        var email = request.Email.Trim().ToLowerInvariant();
 
         var existing = await _userRepository.GetByEmailAsync(email, cancellationToken);
 
         if (existing is not null)
+        {
+            _logger.LogWarning("Registration attempt with already existing email: {Email}", email);
             throw new ConflictException("An account with this email already exists.");
+        }
 
         var user = new User
         {
@@ -50,29 +56,40 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var email = request.Email.Trim().ToLower();
+        var email = request.Email.Trim().ToLowerInvariant();
 
-        var user = await _userRepository.GetByEmailAsync(email, cancellationToken)
-            ?? throw new UnauthorizedException("Invalid email or password.");
-
-        if (user.LockoutUntil.HasValue && user.LockoutUntil > DateTime.UtcNow)
-            throw new UnauthorizedException($"Account is locked until {user.LockoutUntil.Value:HH:mm} UTC.");
-
-        if (user.PasswordHash == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+        if (user == null)
         {
-            user.FailedLoginAttempts++;
-
-            if (user.FailedLoginAttempts >= 5)
-            {
-                user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
-                user.FailedLoginAttempts = 0;
-            }
-
-            await _userRepository.UpdateAsync(user, cancellationToken);
+            _logger.LogWarning("Login attempt with unknown email: {Email}", email);
             throw new UnauthorizedException("Invalid email or password.");
         }
 
-        user.FailedLoginAttempts = 0;
+        if (user.LockoutUntil.HasValue && user.LockoutUntil > DateTime.UtcNow)
+        {
+            _logger.LogWarning("Login attempt on locked account: {Email}", email);
+            throw new UnauthorizedException("Invalid email or password.");
+        }
+
+        if (user.PasswordHash == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            var newCount = await _userRepository.IncrementFailedAttemptsAsync(user.Id, cancellationToken);
+
+            if (newCount >= 5)
+            {
+                user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                _logger.LogWarning("Account locked after too many failed attempts: {Email}", email);
+            }
+            else
+            {
+                _logger.LogWarning("Wrong password for {Email}. Failed attempts: {Count}", email, newCount);
+            }
+
+            throw new UnauthorizedException("Invalid email or password.");
+        }
+
+        await _userRepository.ResetFailedAttemptsAsync(user.Id, cancellationToken);
         user.LockoutUntil = null;
         await _userRepository.UpdateAsync(user, cancellationToken);
 
@@ -88,14 +105,22 @@ public class AuthService : IAuthService
         if (session == null)
         {
             var staleSession = await _sessionRepository.GetByPreviousRefreshTokenHashAsync(incomingHash, cancellationToken);
-            if (staleSession == null)
+            if (staleSession != null)
+            {
+                _logger.LogCritical("Refresh token replay detected for user {UserId}. Revoking all sessions.", staleSession.UserId);
                 await _sessionRepository.DeleteAllForUserAsync(staleSession.UserId, cancellationToken);
+            }
+            else
+            {
+                _logger.LogWarning("Refresh attempt with completely unknown token.");
+            }
 
             throw new UnauthorizedException("Invalid or expired refresh token. Please log in again.");
         }
 
         if (session.ExpiresAt < DateTime.UtcNow)
         {
+            _logger.LogInformation("Expired refresh token used for session {SessionId}.", session.Id);
             await _sessionRepository.DeleteAsync(session.Id, cancellationToken);
             throw new UnauthorizedException("Refresh token has expired. Please log in again.");
         }
@@ -123,6 +148,7 @@ public class AuthService : IAuthService
 
     public async Task LogoutAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("Session {SessionId} logged out.", sessionId);
         await _sessionRepository.DeleteAsync(sessionId, cancellationToken);
     }
 

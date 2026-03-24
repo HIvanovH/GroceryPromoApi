@@ -4,6 +4,7 @@ using GroceryPromoApi.Application.Options;
 using GroceryPromoApi.Application.Services;
 using GroceryPromoApi.Domain.Entities;
 using GroceryPromoApi.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -26,7 +27,7 @@ namespace GroceryPromoApi.Tests.Auth
                 RefreshTokenExpirationDays = 30
             });
 
-            _authService = new AuthService(_userRepository.Object, _sessionRepository.Object, jwtOptions);
+            _authService = new AuthService(_userRepository.Object, _sessionRepository.Object, jwtOptions, Mock.Of<ILogger<AuthService>>());
         }
 
         [Fact]
