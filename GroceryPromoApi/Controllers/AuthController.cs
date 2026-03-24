@@ -2,6 +2,7 @@ using GroceryPromoApi.Application.DTOs.Auth;
 using GroceryPromoApi.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using System.Threading;
 
@@ -18,6 +19,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    [EnableRateLimiting("register")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
@@ -25,6 +27,7 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
@@ -32,6 +35,7 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [EnableRateLimiting("refresh")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest request, CancellationToken cancellationToken)
     {

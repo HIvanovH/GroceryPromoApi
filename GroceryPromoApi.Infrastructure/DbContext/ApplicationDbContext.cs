@@ -7,6 +7,13 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+    }
+
     public DbSet<User> Users => Set<User>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<Supermarket> Supermarkets => Set<Supermarket>();
