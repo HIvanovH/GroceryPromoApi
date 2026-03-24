@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace GroceryPromoApi.Application.Options;
 
 public class JwtOptions
@@ -8,6 +10,7 @@ public class JwtOptions
 
     public string Audience { get; set; } = string.Empty;
 
+    [Required]
     public string SecretKey { get; set; } = string.Empty;
 
     public int ExpirationMinutes { get; set; } = 30;

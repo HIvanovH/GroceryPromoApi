@@ -13,4 +13,9 @@ public interface IUserRepository
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
     
     Task DeleteAsync(User user, CancellationToken cancellationToken = default);
+
+    Task<int> IncrementFailedAttemptsAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    Task ResetFailedAttemptsAsync(Guid userId, CancellationToken cancellationToken = default);
+
 }

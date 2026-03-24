@@ -41,4 +41,32 @@ public class UserRepository : IUserRepository
         _db.Users.Remove(user);
         await _db.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<int> IncrementFailedAttemptsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users.FindAsync([userId], cancellationToken);
+
+        if (user == null)
+            return 0;
+
+        user.FailedLoginAttempts++;
+
+        _db.Users.Update(user);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return user.FailedLoginAttempts;
+    }
+
+    public async Task ResetFailedAttemptsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users.FindAsync([userId], cancellationToken);
+
+        if (user == null)
+            return;
+
+        user.FailedLoginAttempts = 0;
+
+        _db.Users.Update(user);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 }
