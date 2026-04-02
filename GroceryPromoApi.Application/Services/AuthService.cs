@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using GroceryPromoApi.Application.DTOs.Auth;
+using GroceryPromoApi.Application.Requests.Auth;
 using GroceryPromoApi.Application.Interfaces.Repositories;
 using GroceryPromoApi.Application.Interfaces.Services;
 using GroceryPromoApi.Application.Options;

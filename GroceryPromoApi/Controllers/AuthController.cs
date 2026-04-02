@@ -1,4 +1,5 @@
 using GroceryPromoApi.Application.DTOs.Auth;
+using GroceryPromoApi.Application.Requests.Auth;
 using GroceryPromoApi.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

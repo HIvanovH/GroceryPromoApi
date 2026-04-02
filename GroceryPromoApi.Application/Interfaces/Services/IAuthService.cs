@@ -1,4 +1,5 @@
 using GroceryPromoApi.Application.DTOs.Auth;
+using GroceryPromoApi.Application.Requests.Auth;
 
 namespace GroceryPromoApi.Application.Interfaces.Services;
 

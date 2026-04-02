@@ -8,10 +8,7 @@ var postgres = builder.AddPostgres("postgres", password: postgresPassword, port:
 
 var db = postgres.AddDatabase("grocery-db");
 
-var redis = builder.AddRedis("redis");
-
 builder.AddProject<Projects.GroceryPromoApi>("api")
-    .WithReference(db)
-    .WithReference(redis);
+    .WithReference(db);
 
 builder.Build().Run();
