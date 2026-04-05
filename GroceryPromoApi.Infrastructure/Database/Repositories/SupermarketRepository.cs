@@ -36,4 +36,10 @@ public class SupermarketRepository : ISupermarketRepository
         _dbContext.Supermarkets.Remove(supermarket);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Supermarket?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Supermarkets
+            .FirstOrDefaultAsync(s => s.Slug == slug, cancellationToken);
+    }
 }

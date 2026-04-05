@@ -2,6 +2,8 @@ using System.Text;
 using GroceryPromoApi;
 using GroceryPromoApi.Application;
 using GroceryPromoApi.Infrastructure;
+using GroceryPromoApi.Infrastructure.DbContext;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.RateLimiting;
@@ -71,6 +73,12 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseRateLimiter();
