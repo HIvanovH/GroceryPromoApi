@@ -5,6 +5,9 @@
 
 # dotenv files
 .env
+
+# HTTP client private environment (contains API keys)
+http-client.private.env.json
 # User secrets
 **/appsettings.Development.json
 **/appsettings.*.json

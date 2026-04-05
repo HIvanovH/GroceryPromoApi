@@ -5,6 +5,7 @@ namespace GroceryPromoApi.Application.Interfaces.Repositories;
 public interface ISupermarketRepository
 {
     Task<List<Supermarket>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Supermarket?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
    
     Task AddAsync(Supermarket supermarket, CancellationToken cancellationToken = default);
     

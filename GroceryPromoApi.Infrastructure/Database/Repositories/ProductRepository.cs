@@ -55,6 +55,17 @@ public class ProductRepository : IProductRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<HashSet<int>> GetExternalIdsByBrochureIdsAsync(IEnumerable<Guid> brochureIds, CancellationToken cancellationToken = default)
+    {
+        var ids = brochureIds.ToList();
+        var externalIds = await _dbContext.Products
+            .Where(p => ids.Contains(p.BrochureId))
+            .Select(p => p.ExternalId)
+            .ToListAsync(cancellationToken);
+
+        return externalIds.ToHashSet();
+    }
+
     public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
          _dbContext.Products.Update(product);

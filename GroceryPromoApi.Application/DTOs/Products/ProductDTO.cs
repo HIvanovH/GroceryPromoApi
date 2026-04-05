@@ -12,6 +12,10 @@
 
         public decimal? OldPriceLev { get; set; }
 
+        public decimal PriceEur { get; set; }
+
+        public decimal? OldPriceEur { get; set; }
+
         public string? Discount { get; set; }
 
         public string? Quantity { get; set; }
