@@ -12,6 +12,11 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
+
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.Favourites)
+            .WithMany()
+            .UsingEntity(j => j.ToTable("UserFavourites"));
     }
 
     public DbSet<User> Users => Set<User>();
@@ -24,9 +29,9 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
 
     public DbSet<Product> Products => Set<Product>();
 
-    public DbSet<ProductPending> ProductsPending => Set<ProductPending>();
+    public DbSet<CatalogueProduct> CatalogueProducts => Set<CatalogueProduct>();
 
-    public DbSet<FavouriteProduct> Favourites => Set<FavouriteProduct>();
+    public DbSet<CatalogueProductOffer> CatalogueProductOffers => Set<CatalogueProductOffer>();
 
     public DbSet<PreferredStore> PreferredStores => Set<PreferredStore>();
 

@@ -34,6 +34,10 @@ public class Product
 
     public DateTime? ValidUntil { get; set; }
 
+    public Guid CatalogueProductId { get; set; }
+
+    public CatalogueProduct CatalogueProduct { get; set; } = null!;
+
     public Guid BrochureId { get; set; }
 
     public Brochure Brochure { get; set; } = null!;
