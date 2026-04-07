@@ -16,34 +16,26 @@ public class FavouriteRepository : IFavouriteRepository
 
     public async Task AddAsync(FavouriteProduct favourite, CancellationToken cancellationToken = default)
     {
-        await _dbContext.Favourites.AddAsync(favourite, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        throw new NotImplementedException("Favourites are being redesigned.");
     }
 
     public async Task DeleteAsync(FavouriteProduct favourite, CancellationToken cancellationToken = default)
     {
-        _dbContext.Favourites.Remove(favourite);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        throw new NotImplementedException("Favourites are being redesigned.");
     }
 
     public async Task<List<FavouriteProduct>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Favourites
-            .Where(f => f.UserId == userId)
-            .ToListAsync(cancellationToken);
+        throw new NotImplementedException("Favourites are being redesigned.");
     }
 
     public async Task<FavouriteProduct?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Favourites
-            .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
+        throw new NotImplementedException("Favourites are being redesigned.");
     }
 
     public async Task<bool> ExistsAsync(Guid userId, string? normalizedName, string? normalizedQuantity, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Favourites.AnyAsync(f =>
-            f.UserId == userId &&
-            f.NormalizedName == normalizedName &&
-            f.NormalizedQuantity == normalizedQuantity, cancellationToken);
+        throw new NotImplementedException("Favourites are being redesigned.");
     }
 }

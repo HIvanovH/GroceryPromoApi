@@ -18,7 +18,7 @@ public class User
 
     public DateTime CreatedAt { get; set; }
 
-    public ICollection<FavouriteProduct> Favourites { get; set; } = new List<FavouriteProduct>();
+    public ICollection<CatalogueProduct> Favourites { get; set; } = new List<CatalogueProduct>();
 
     public ICollection<PreferredStore> PreferredStores { get; set; } = new List<PreferredStore>();
 
