@@ -24,13 +24,20 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+#pragma warning disable EXTEXP0001
         services.AddHttpClient<IPriceBarometerClient, PriceBarometerClient>((sp, client) =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PriceBarometerOptions>>().Value;
             client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
             client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", options.ApiKey);
+        })
+        .RemoveAllResilienceHandlers()
+        .AddStandardResilienceHandler(options =>
+        {
+            options.Retry.MaxRetryAttempts = 1;
         });
+#pragma warning restore EXTEXP0001
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserSessionRepository, UserSessionRepository>();
@@ -39,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IFavouriteRepository, FavouriteRepository>();
         services.AddScoped<IPreferredStoreRepository, PreferredStoreRepository>();
         services.AddScoped<IBrochureRepository, BrochureRepository>();
+        services.AddScoped<ICatalogueProductRepository, CatalogueProductRepository>();
 
         return services;
     }
