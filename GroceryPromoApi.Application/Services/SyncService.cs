@@ -13,6 +13,7 @@ public class SyncService : ISyncService
     private readonly IBrochureRepository _brochureRepository;
     private readonly IProductRepository _productRepository;
     private readonly ISupermarketRepository _supermarketRepository;
+    private readonly ICatalogueProductRepository _catalogueProductRepository;
     private readonly ILogger<SyncService> _logger;
 
     public SyncService(
@@ -20,12 +21,14 @@ public class SyncService : ISyncService
         IBrochureRepository brochureRepository,
         IProductRepository productRepository,
         ISupermarketRepository supermarketRepository,
+        ICatalogueProductRepository catalogueProductRepository,
         ILogger<SyncService> logger)
     {
         _priceBarometerClient = priceBarometerClient;
         _brochureRepository = brochureRepository;
         _productRepository = productRepository;
         _supermarketRepository = supermarketRepository;
+        _catalogueProductRepository = catalogueProductRepository;
         _logger = logger;
     }
 
@@ -53,7 +56,22 @@ public class SyncService : ISyncService
     {
         _logger.LogInformation("Syncing {Supermarket}...", supermarket.Name);
 
-        var context = await PrepareBrochuresAsync(supermarket, existingCodes, cancellationToken);
+        BrochureSyncContext? context;
+        try
+        {
+            context = await PrepareBrochuresAsync(supermarket, existingCodes, cancellationToken);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("401"))
+        {
+            _logger.LogWarning("Rate limit hit fetching brochures for {Supermarket}. Skipping.", supermarket.Name);
+            return true;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "HTTP error fetching brochures for {Supermarket}. Skipping.", supermarket.Name);
+            return false;
+        }
+
         if (context is null)
             return false;
 
@@ -145,6 +163,13 @@ public class SyncService : ISyncService
                 rateLimitHit = true;
                 break;
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning(ex, "HTTP error fetching {Supermarket} page {Page}. Saving {Count} products collected so far.",
+                    supermarket.Name, page, products.Count);
+                rateLimitHit = true;
+                break;
+            }
 
             if (pageProducts.Count == 0)
                 break;
@@ -163,7 +188,42 @@ public class SyncService : ISyncService
                     continue;
 
                 seenExternalIds.Add(p.Id);
-                newProductsOnPage++;
+                var normalizedName = p.Name.ToLower().Trim();
+                var normalizedQuantity = p.Quantity?.ToLower().Trim();
+
+                var catalogueProduct = await _catalogueProductRepository
+                    .GetByIdentityAsync(normalizedName, normalizedQuantity, p.Category, cancellationToken);
+
+                if (catalogueProduct is null)
+                {
+                    catalogueProduct = new CatalogueProduct
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = p.Name,
+                        NormalizedName = normalizedName,
+                        NormalizedQuantity = normalizedQuantity,
+                        Category = p.Category,
+                        ImageUrl = p.ImageUrl,
+                        LastSeenAt = DateTime.UtcNow
+                    };
+                    await _catalogueProductRepository.AddAsync(catalogueProduct, cancellationToken);
+                }
+                else
+                {
+                    catalogueProduct.ImageUrl = p.ImageUrl;
+                    catalogueProduct.LastSeenAt = DateTime.UtcNow;
+                    await _catalogueProductRepository.UpdateAsync(catalogueProduct, cancellationToken);
+                }
+
+                await _catalogueProductRepository.UpsertOfferAsync(new CatalogueProductOffer
+                {
+                    Id = Guid.NewGuid(),
+                    CatalogueProductId = catalogueProduct.Id,
+                    SupermarketId = supermarket.Id,
+                    CurrentPriceEur = p.PriceEur,
+                    NormalPriceEur = p.OldPriceEur,
+                    PromoValidUntil = brochure.ValidUntil
+                }, cancellationToken);
 
                 products.Add(new Product
                 {
@@ -184,10 +244,12 @@ public class SyncService : ISyncService
                     ValidFrom = brochure.ValidFrom,
                     ValidUntil = brochure.ValidUntil,
                     BrochureId = brochure.Id,
+                    CatalogueProductId = catalogueProduct.Id,
                     SupermarketId = supermarket.Id
                 });
+                newProductsOnPage++;
             }
-
+           
             if (newProductsOnPage == 0)
                 consecutivePagesWithNoNewProducts++;
             else
