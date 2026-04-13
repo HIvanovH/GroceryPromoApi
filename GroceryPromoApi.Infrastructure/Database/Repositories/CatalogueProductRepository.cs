@@ -19,9 +19,31 @@ public class CatalogueProductRepository : ICatalogueProductRepository
         return await _dbContext.CatalogueProducts
             .FirstOrDefaultAsync(c =>
                 c.NormalizedName == normalizedName &&
-                c.NormalizedQuantity == normalizedQuantity &&
-                c.Category == category,
+                c.NormalizedQuantity == normalizedQuantity,
             cancellationToken);
+    }
+
+    public async Task<List<CatalogueProduct>> SearchAsync(string? name, string? category, Guid? supermarketId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.CatalogueProducts
+            .Include(c => c.Offers)
+                .ThenInclude(o => o.Supermarket)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+            query = query.Where(c => c.NormalizedName.Contains(name.ToLower().Trim()));
+
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(c => c.Category == category);
+
+        if (supermarketId.HasValue)
+            query = query.Where(c => c.Offers.Any(o => o.SupermarketId == supermarketId.Value));
+
+        return await query
+            .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(CatalogueProduct catalogueProduct, CancellationToken cancellationToken = default)
