@@ -189,10 +189,10 @@ public class SyncService : ISyncService
 
                 seenExternalIds.Add(p.Id);
                 var normalizedName = p.Name.ToLower().Trim();
-                var normalizedQuantity = p.Quantity?.ToLower().Trim();
+                var normalizedQuantity = QuantityNormalizer.Normalize(p.Quantity);
 
                 var catalogueProduct = await _catalogueProductRepository
-                    .GetByIdentityAsync(normalizedName, normalizedQuantity, p.Category, cancellationToken);
+                    .GetByIdentityAsync(normalizedName, normalizedQuantity, cancellationToken);
 
                 if (catalogueProduct is null)
                 {
@@ -238,7 +238,7 @@ public class SyncService : ISyncService
                     OldPriceEur = p.OldPriceEur,
                     Discount = p.Discount,
                     Quantity = p.Quantity,
-                    NormalizedQuantity = p.Quantity?.ToLower().Trim(),
+                    NormalizedQuantity = QuantityNormalizer.Normalize(p.Quantity),
                     Category = p.Category,
                     ImageUrl = p.ImageUrl,
                     ValidFrom = brochure.ValidFrom,
