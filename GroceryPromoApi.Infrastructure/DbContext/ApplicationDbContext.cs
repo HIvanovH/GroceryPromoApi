@@ -17,6 +17,10 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
             .HasMany(u => u.Favourites)
             .WithMany()
             .UsingEntity(j => j.ToTable("UserFavourites"));
+
+        modelBuilder.Entity<UserSession>()
+            .HasIndex(s => s.RefreshToken)
+            .IsUnique();
     }
 
     public DbSet<User> Users => Set<User>();
