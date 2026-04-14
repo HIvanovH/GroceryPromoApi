@@ -1,5 +1,4 @@
-using GroceryPromoApi.Application.DTOs.Supermarkets;
-using GroceryPromoApi.Application.Interfaces.Repositories;
+using GroceryPromoApi.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GroceryPromoApi.Controllers;
@@ -8,24 +7,17 @@ namespace GroceryPromoApi.Controllers;
 [Route("api/v1/supermarkets")]
 public class SupermarketController : ControllerBase
 {
-    private readonly ISupermarketRepository _supermarketRepository;
+    private readonly ISupermarketService _supermarketService;
 
-    public SupermarketController(ISupermarketRepository supermarketRepository)
+    public SupermarketController(ISupermarketService supermarketService)
     {
-        _supermarketRepository = supermarketRepository;
+        _supermarketService = supermarketService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAllSupermarkets(CancellationToken cancellationToken)
     {
-        var supermarkets = await _supermarketRepository.GetAllAsync(cancellationToken);
-        var result = supermarkets.Select(s => new SupermarketDTO
-        {
-            Id = s.Id,
-            Name = s.Name,
-            Slug = s.Slug
-        }).ToList();
-
+        var result = await _supermarketService.GetAllAsync(cancellationToken);
         return Ok(result);
     }
 }
