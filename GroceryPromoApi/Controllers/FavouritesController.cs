@@ -22,7 +22,9 @@ namespace GroceryPromoApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFavouritesByUserId(CancellationToken cancellationToken)
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized();
+
             var result = await _favouriteService.GetFavouritesAsync(userId, cancellationToken);
             return Ok(result);
         }
@@ -30,15 +32,19 @@ namespace GroceryPromoApi.Controllers
         [HttpPost]
         public async Task<IActionResult> AddFavouriteAsync([FromBody] AddFavouriteRequest request, CancellationToken cancellationToken = default)
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized();
+
             var result = await _favouriteService.AddFavouriteAsync(userId, request, cancellationToken);
-            return CreatedAtAction(nameof(GetFavouritesByUserId), result);
+            return CreatedAtAction(nameof(GetFavouritesByUserId), null, result);
         }
 
         [HttpDelete("{favouriteId:guid}")]
         public async Task<IActionResult> RemoveFavouriteAsync([FromRoute] Guid favouriteId, CancellationToken cancellationToken = default)
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized();
+
             await _favouriteService.RemoveFavouriteAsync(userId, favouriteId, cancellationToken);
             return NoContent();
         }

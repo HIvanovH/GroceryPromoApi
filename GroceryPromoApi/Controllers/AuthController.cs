@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
-using System.Threading;
 
 namespace GroceryPromoApi.Controllers;
 
@@ -25,7 +24,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(request, cancellationToken);
-        return Ok(result);
+        return StatusCode(StatusCodes.Status201Created, result);
     }
 
     [EnableRateLimiting("login")]
@@ -48,7 +47,9 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var sessionId = Guid.Parse(User.FindFirstValue("sessionId")!);
+        if (!Guid.TryParse(User.FindFirstValue("sessionId"), out var sessionId))
+            return Unauthorized();
+
         await _authService.LogoutAsync(sessionId, cancellationToken);
         return NoContent();
     }
@@ -57,7 +58,9 @@ public class AuthController : ControllerBase
     [HttpPut("fcm-token")]
     public async Task<IActionResult> UpdateFcmToken([FromBody] string fcmToken, CancellationToken cancellationToken)
     {
-        var sessionId = Guid.Parse(User.FindFirstValue("sessionId")!);
+        if (!Guid.TryParse(User.FindFirstValue("sessionId"), out var sessionId))
+            return Unauthorized();
+
         await _authService.UpdateFcmTokenAsync(sessionId, fcmToken, cancellationToken);
         return NoContent();
     }

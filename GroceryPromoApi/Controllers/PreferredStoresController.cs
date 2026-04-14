@@ -21,7 +21,9 @@ public class PreferredStoresController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetPreferredStores(CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized();
+
         var result = await _preferredStoreService.GetPreferredStoresAsync(userId, cancellationToken);
         return Ok(result);
     }
@@ -29,15 +31,19 @@ public class PreferredStoresController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddPreferredStore([FromBody] AddPreferredStoreRequest request, CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized();
+
         var result = await _preferredStoreService.AddPreferredStoreAsync(userId, request, cancellationToken);
-        return CreatedAtAction(nameof(GetPreferredStores), result);
+        return CreatedAtAction(nameof(GetPreferredStores), null, result);
     }
 
     [HttpDelete("{supermarketId:guid}")]
     public async Task<IActionResult> RemovePreferredStore(Guid supermarketId, CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized();
+
         await _preferredStoreService.RemovePreferredStoreAsync(userId, supermarketId, cancellationToken);
         return NoContent();
     }
