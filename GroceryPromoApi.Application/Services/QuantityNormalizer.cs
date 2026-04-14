@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace GroceryPromoApi.Application.Services;
 
-internal static class QuantityNormalizer
+public static class QuantityNormalizer
 {
     private static readonly (Regex Pattern, string Replacement)[] UnitReplacements =
     [
