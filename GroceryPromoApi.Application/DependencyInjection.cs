@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddScoped<IFavouriteService, FavouriteService>();
         services.AddScoped<IPreferredStoreService, PreferredStoreService>();
         services.AddScoped<ISyncService, SyncService>();
+        services.AddScoped<ICatalogueProductService, CatalogueProductService>();
+        services.AddScoped<ISupermarketService, SupermarketService>();
         services.AddOptions<JwtOptions>()
             .BindConfiguration(JwtOptions.SectionName)
             .ValidateDataAnnotations()

@@ -14,7 +14,7 @@ public class CatalogueProductRepository : ICatalogueProductRepository
         _dbContext = dbContext;
     }
 
-    public async Task<CatalogueProduct?> GetByIdentityAsync(string normalizedName, string? normalizedQuantity, string? category, CancellationToken cancellationToken = default)
+    public async Task<CatalogueProduct?> GetByIdentityAsync(string normalizedName, string? normalizedQuantity, CancellationToken cancellationToken = default)
     {
         return await _dbContext.CatalogueProducts
             .FirstOrDefaultAsync(c =>
