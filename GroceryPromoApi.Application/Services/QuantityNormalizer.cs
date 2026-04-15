@@ -1,58 +1,68 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace GroceryPromoApi.Application.Services;
 
 public static class QuantityNormalizer
 {
-    private static readonly (Regex Pattern, string Replacement)[] UnitReplacements =
-    [
-        (new Regex(@"(?<!\p{L})мл\.?(?!\p{L})", RegexOptions.IgnoreCase), "ml"),
-        (new Regex(@"(?<!\p{L})л\.?(?!\p{L})",  RegexOptions.IgnoreCase), "l"),
-        (new Regex(@"(?<!\p{L})кг\.?(?!\p{L})", RegexOptions.IgnoreCase), "kg"),
-        (new Regex(@"(?<!\p{L})кр\.?(?!\p{L})", RegexOptions.IgnoreCase), "kg"),
-        (new Regex(@"(?<!\p{L})гр\.?(?!\p{L})", RegexOptions.IgnoreCase), "g"),
-        (new Regex(@"(?<!\p{L})г\.?(?!\p{L})",  RegexOptions.IgnoreCase), "g"),
-        (new Regex(@"(?<!\p{L})броя(?!\p{L})",  RegexOptions.IgnoreCase), "br"),
-        (new Regex(@"(?<!\p{L})бр\.?(?!\p{L})", RegexOptions.IgnoreCase), "br"),
-        (new Regex(@"(?<!\p{L})комплекта?(?!\p{L})", RegexOptions.IgnoreCase), "kit"),
-        (new Regex(@"(?<!\p{L})чифта(?!\p{L})",      RegexOptions.IgnoreCase), "pair"),
-    ];
+    private static readonly Dictionary<string, string> UnitMap = new()
+    {
+        { "мл", "ml" }, { "л", "l" },
+        { "кг", "kg" }, { "кр", "kg" },
+        { "гр", "g"  }, { "г",  "g" },
+        { "броя", "br" }, { "бр", "br" },
+        { "комплект", "kit" }, { "комплекта", "kit" },
+        { "чифта", "pair" },
+        { "опаковки", "pcs" }, { "опаковка", "pcs" }
+    };
 
-    private static readonly Regex SpacesAroundX    = new(@"\s*[xх×]\s*", RegexOptions.IgnoreCase);
-    private static readonly Regex NumberUnitSpace   = new(@"(\d)\s+([a-z]+)");
-    private static readonly Regex PackagingSuffix   = new(@"(/опак\w*| в оп\w*).*$", RegexOptions.IgnoreCase);
-    private static readonly Regex TrailingSlashData = new(@"/опаковка.*$", RegexOptions.IgnoreCase);
+    private static readonly Regex PackagingSuffix =
+        new(@"(/опак\w*| в оп\w*).*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public static string? Normalize(string? quantity)
     {
         if (string.IsNullOrWhiteSpace(quantity))
             return null;
 
-        var q = quantity.ToLower().Trim();
+        var normalized = quantity.ToLower().Trim()
+            .Replace(',', '.')
+            .TrimStart('~')
+            .TrimEnd('.');
 
-        // decimal separator
-        q = q.Replace(',', '.');
+        normalized = PackagingSuffix.Replace(normalized, "").Trim();
 
-        // Cyrillic units → Latin
-        foreach (var (pattern, replacement) in UnitReplacements)
-            q = pattern.Replace(q, replacement);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return null;
 
-        // multiplication sign (Cyrillic х and ×) → Latin x
-        q = SpacesAroundX.Replace(q, "x");
+        var parts = normalized.Split(['x', 'х', '×'], StringSplitOptions.TrimEntries);
+        return string.Join("x", parts.Select(NormalizeToken));
+    }
 
-        // remove space between number and unit: "250 g" → "250g"
-        q = NumberUnitSpace.Replace(q, "$1$2");
+    private static string NormalizeToken(string token)
+    {
+        int unitStart = 0;
+        while (unitStart < token.Length && (char.IsDigit(token[unitStart]) || token[unitStart] == '.' || token[unitStart] == ' '))
+            unitStart++;
 
-        // strip packaging suffixes
-        q = PackagingSuffix.Replace(q, "");
-        q = TrailingSlashData.Replace(q, "");
+        if (unitStart == 0)
+            return token; // no leading number — return as-is
 
-        // strip approximate prefix
-        q = q.TrimStart('~').Trim();
+        var numberStr = token[..unitStart].Trim();
+        var unitStr   = token[unitStart..].Trim().TrimEnd('.');
 
-        // strip trailing period
-        q = q.TrimEnd('.').Trim();
+        if (!decimal.TryParse(numberStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var number))
+            return token;
 
-        return string.IsNullOrWhiteSpace(q) ? null : q;
+        if (string.IsNullOrEmpty(unitStr))
+            return number.ToString("0.##");
+
+        var latinUnit = UnitMap.TryGetValue(unitStr, out var latin) ? latin : unitStr;
+
+        return latinUnit switch
+        {
+            "kg" => (number * 1000).ToString("0.##") + "g",
+            "l"  => (number * 1000).ToString("0.##") + "ml",
+            _    => number.ToString("0.##") + latinUnit
+        };
     }
 }
