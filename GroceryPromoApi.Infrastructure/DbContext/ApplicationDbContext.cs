@@ -21,6 +21,12 @@ public class ApplicationDbContext : Microsoft.EntityFrameworkCore.DbContext
         modelBuilder.Entity<UserSession>()
             .HasIndex(s => s.RefreshToken)
             .IsUnique();
+
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.CatalogueProduct)
+            .WithMany()
+            .HasForeignKey(p => p.CatalogueProductId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     public DbSet<User> Users => Set<User>();
