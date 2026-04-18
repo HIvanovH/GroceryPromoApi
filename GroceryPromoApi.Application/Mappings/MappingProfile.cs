@@ -1,6 +1,5 @@
 using AutoMapper;
 using GroceryPromoApi.Application.DTOs.Catalogue;
-using GroceryPromoApi.Application.DTOs.Favorites;
 using GroceryPromoApi.Application.DTOs.Products;
 using GroceryPromoApi.Application.DTOs.Supermarkets;
 using GroceryPromoApi.Domain.Entities;
@@ -13,8 +12,6 @@ public class MappingProfile : Profile
     {
         CreateMap<Product, ProductDTO>()
             .ForMember(dest => dest.SupermarketName, opt => opt.MapFrom(src => src.Supermarket.Name));
-
-        CreateMap<FavouriteProduct, FavouriteProductDTO>();
 
         CreateMap<CatalogueProductOffer, CatalogueProductOfferDTO>()
             .ForMember(dest => dest.SupermarketName, opt => opt.MapFrom(src => src.Supermarket.Name))

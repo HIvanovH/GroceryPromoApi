@@ -1,14 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace GroceryPromoApi.Application.Requests.Favourites
+namespace GroceryPromoApi.Application.Requests.Favourites;
+
+public class AddFavouriteRequest
 {
-    public class AddFavouriteRequest
-    {
-        [Required]
-        public string? NormalizedName { get; set; }
-
-        public string? NormalizedQuantity { get; set; }
-
-        public string? Category { get; set; }
-    }
+    [Required]
+    public Guid CatalogueProductId { get; set; }
 }

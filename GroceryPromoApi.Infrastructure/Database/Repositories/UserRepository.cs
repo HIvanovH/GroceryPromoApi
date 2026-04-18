@@ -69,4 +69,13 @@ public class UserRepository : IUserRepository
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<User?> GetWithFavouritesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .Include(u => u.Favourites)
+                .ThenInclude(f => f.Offers)
+                    .ThenInclude(o => o.Supermarket)
+            .FirstOrDefaultAsync(u => u.Id==userId, cancellationToken);
+    }
 }

@@ -79,4 +79,12 @@ public class CatalogueProductRepository : ICatalogueProductRepository
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public Task<CatalogueProduct?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.CatalogueProducts
+                        .Include(c=>c.Offers)
+                            .ThenInclude(o => o.Supermarket)
+                        .FirstOrDefaultAsync(c=>c.Id == id, cancellationToken);
+    }
 }
