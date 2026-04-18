@@ -46,10 +46,10 @@ public static class QuantityNormalizer
             unitStart++;
 
         if (unitStart == 0)
-            return token; 
+            return token;
 
         var numberStr = token[..unitStart].Trim();
-        var unitStr   = token[unitStart..].Trim().TrimEnd('.');
+        var unitStr = token[unitStart..].Trim().TrimEnd('.');
 
         if (!decimal.TryParse(numberStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var number))
             return token;
@@ -65,8 +65,8 @@ public static class QuantityNormalizer
         return latinUnit switch
         {
             "kg" => (number * 1000).ToString("0.##", CultureInfo.InvariantCulture) + "g",
-            "l"  => (number * 1000).ToString("0.##", CultureInfo.InvariantCulture) + "ml",
-            _    => number.ToString("0.##", CultureInfo.InvariantCulture) + latinUnit
+            "l" => (number * 1000).ToString("0.##", CultureInfo.InvariantCulture) + "ml",
+            _ => number.ToString("0.##", CultureInfo.InvariantCulture) + latinUnit
         };
     }
 }
