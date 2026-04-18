@@ -4,6 +4,8 @@ namespace GroceryPromoApi.Application.Interfaces.Repositories;
 
 public interface ICatalogueProductRepository
 {
+    Task<CatalogueProduct?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<CatalogueProduct?> GetByIdentityAsync(string normalizedName, string? normalizedQuantity, CancellationToken cancellationToken = default);
 
     Task<List<CatalogueProduct>> SearchAsync(string? name, string? category, Guid? supermarketId, int page, int pageSize, CancellationToken cancellationToken = default);

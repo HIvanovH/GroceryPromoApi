@@ -43,8 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IUserSessionRepository, UserSessionRepository>();
         services.AddScoped<ISupermarketRepository, SupermarketRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IFavouriteRepository, FavouriteRepository>();
-        services.AddScoped<IPreferredStoreRepository, PreferredStoreRepository>();
+services.AddScoped<IPreferredStoreRepository, PreferredStoreRepository>();
         services.AddScoped<IBrochureRepository, BrochureRepository>();
         services.AddScoped<ICatalogueProductRepository, CatalogueProductRepository>();
 

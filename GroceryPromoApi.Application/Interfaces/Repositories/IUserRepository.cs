@@ -18,4 +18,6 @@ public interface IUserRepository
 
     Task ResetFailedAttemptsAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    Task<User?> GetWithFavouritesAsync(Guid userId, CancellationToken cancellationToken = default);
+
 }

@@ -1,4 +1,4 @@
-﻿using GroceryPromoApi.Application.DTOs.Favorites;
+﻿using GroceryPromoApi.Application.DTOs.Catalogue;
 using GroceryPromoApi.Application.Interfaces.Services;
 using GroceryPromoApi.Application.Requests.Favourites;
 using Microsoft.AspNetCore.Authorization;
@@ -39,13 +39,13 @@ namespace GroceryPromoApi.Controllers
             return CreatedAtAction(nameof(GetFavouritesByUserId), null, result);
         }
 
-        [HttpDelete("{favouriteId:guid}")]
-        public async Task<IActionResult> RemoveFavouriteAsync([FromRoute] Guid favouriteId, CancellationToken cancellationToken = default)
+        [HttpDelete("{catalogueProductId:guid}")]
+        public async Task<IActionResult> RemoveFavouriteAsync([FromRoute] Guid catalogueProductId, CancellationToken cancellationToken = default)
         {
             if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
                 return Unauthorized();
 
-            await _favouriteService.RemoveFavouriteAsync(userId, favouriteId, cancellationToken);
+            await _favouriteService.RemoveFavouriteAsync(userId, catalogueProductId, cancellationToken);
             return NoContent();
         }
     }

@@ -1,5 +1,5 @@
 using AutoMapper;
-using GroceryPromoApi.Application.DTOs.Favorites;
+using GroceryPromoApi.Application.DTOs.Catalogue;
 using GroceryPromoApi.Application.Interfaces.Repositories;
 using GroceryPromoApi.Application.Requests.Favourites;
 using GroceryPromoApi.Application.Services;
@@ -11,123 +11,184 @@ namespace GroceryPromoApi.Tests.Favourites
 {
     public class FavouriteServiceTests
     {
-        private readonly Mock<IFavouriteRepository> _favouriteRepository = new();
+        private readonly Mock<IUserRepository> _userRepository = new();
+        private readonly Mock<ICatalogueProductRepository> _catalogueProductRepository = new();
         private readonly Mock<IMapper> _mapper = new();
         private readonly FavouriteService _favouriteService;
 
         public FavouriteServiceTests()
         {
-            _favouriteService = new FavouriteService(_favouriteRepository.Object, _mapper.Object);
+            _favouriteService = new FavouriteService(
+                _userRepository.Object,
+                _catalogueProductRepository.Object,
+                _mapper.Object);
+        }
+
+        // ── GetFavouritesAsync ────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetFavourites_UserNotFound_ThrowsNotFoundException()
+        {
+            var userId = Guid.NewGuid();
+
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((User?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _favouriteService.GetFavouritesAsync(userId));
         }
 
         [Fact]
-        public async Task GetFavourites_ReturnsListForUser()
+        public async Task GetFavourites_ReturnsListOfCatalogueProductDTOs()
         {
             var userId = Guid.NewGuid();
-            var favourites = new List<FavouriteProduct>
-            {
-                new() { Id = Guid.NewGuid(), UserId = userId, NormalizedName = "кафе" }
-            };
-            var dtos = new List<FavouriteProductDTO>
-            {
-                new() { Id = favourites[0].Id, NormalizedName = "кафе" }
-            };
+            var catalogueProduct = new CatalogueProduct { Id = Guid.NewGuid(), Name = "Кафе" };
+            var user = new User { Id = userId, Favourites = new List<CatalogueProduct> { catalogueProduct } };
+            var dtos = new List<CatalogueProductDTO> { new() { Id = catalogueProduct.Id, Name = "Кафе" } };
 
-            _favouriteRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(favourites);
-            _mapper.Setup(m => m.Map<List<FavouriteProductDTO>>(favourites))
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
+            _mapper.Setup(m => m.Map<List<CatalogueProductDTO>>(user.Favourites))
                 .Returns(dtos);
 
             var result = await _favouriteService.GetFavouritesAsync(userId);
 
             Assert.Single(result);
-            Assert.Equal("кафе", result[0].NormalizedName);
+            Assert.Equal("Кафе", result[0].Name);
         }
 
         [Fact]
-        public async Task AddFavourite_WhenAlreadyExists_ThrowsConflictException()
+        public async Task GetFavourites_UserWithNoFavourites_ReturnsEmptyList()
         {
             var userId = Guid.NewGuid();
-            var request = new AddFavouriteRequest
-            {
-                NormalizedName = "кафе",
-                NormalizedQuantity = "500г"
-            };
+            var user = new User { Id = userId, Favourites = new List<CatalogueProduct>() };
 
-            _favouriteRepository.Setup(r => r.ExistsAsync(userId, request.NormalizedName, request.NormalizedQuantity, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
+            _mapper.Setup(m => m.Map<List<CatalogueProductDTO>>(user.Favourites))
+                .Returns(new List<CatalogueProductDTO>());
+
+            var result = await _favouriteService.GetFavouritesAsync(userId);
+
+            Assert.Empty(result);
+        }
+
+        // ── AddFavouriteAsync ─────────────────────────────────────────────
+
+        [Fact]
+        public async Task AddFavourite_CatalogueProductNotFound_ThrowsNotFoundException()
+        {
+            var userId = Guid.NewGuid();
+            var request = new AddFavouriteRequest { CatalogueProductId = Guid.NewGuid() };
+
+            _catalogueProductRepository.Setup(r => r.GetByIdAsync(request.CatalogueProductId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CatalogueProduct?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _favouriteService.AddFavouriteAsync(userId, request));
+        }
+
+        [Fact]
+        public async Task AddFavourite_UserNotFound_ThrowsNotFoundException()
+        {
+            var userId = Guid.NewGuid();
+            var catalogueProduct = new CatalogueProduct { Id = Guid.NewGuid(), Name = "Кафе" };
+            var request = new AddFavouriteRequest { CatalogueProductId = catalogueProduct.Id };
+
+            _catalogueProductRepository.Setup(r => r.GetByIdAsync(request.CatalogueProductId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(catalogueProduct);
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((User?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _favouriteService.AddFavouriteAsync(userId, request));
+        }
+
+        [Fact]
+        public async Task AddFavourite_AlreadyInFavourites_ThrowsConflictException()
+        {
+            var userId = Guid.NewGuid();
+            var catalogueProduct = new CatalogueProduct { Id = Guid.NewGuid(), Name = "Кафе" };
+            var user = new User { Id = userId, Favourites = new List<CatalogueProduct> { catalogueProduct } };
+            var request = new AddFavouriteRequest { CatalogueProductId = catalogueProduct.Id };
+
+            _catalogueProductRepository.Setup(r => r.GetByIdAsync(request.CatalogueProductId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(catalogueProduct);
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
 
             await Assert.ThrowsAsync<ConflictException>(() =>
                 _favouriteService.AddFavouriteAsync(userId, request));
         }
 
         [Fact]
-        public async Task AddFavourite_NewProduct_ReturnsDto()
+        public async Task AddFavourite_ValidRequest_AddsThenReturnsDTO()
         {
             var userId = Guid.NewGuid();
-            var request = new AddFavouriteRequest
-            {
-                NormalizedName = "кафе",
-                NormalizedQuantity = "500г",
-                Category = "Напитки"
-            };
-            var dto = new FavouriteProductDTO { NormalizedName = "кафе" };
+            var catalogueProduct = new CatalogueProduct { Id = Guid.NewGuid(), Name = "Кафе" };
+            var user = new User { Id = userId, Favourites = new List<CatalogueProduct>() };
+            var request = new AddFavouriteRequest { CatalogueProductId = catalogueProduct.Id };
+            var dto = new CatalogueProductDTO { Id = catalogueProduct.Id, Name = "Кафе" };
 
-            _favouriteRepository.Setup(r => r.ExistsAsync(userId, request.NormalizedName, request.NormalizedQuantity, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-            _favouriteRepository.Setup(r => r.AddAsync(It.IsAny<FavouriteProduct>(), It.IsAny<CancellationToken>()))
+            _catalogueProductRepository.Setup(r => r.GetByIdAsync(request.CatalogueProductId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(catalogueProduct);
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
+            _userRepository.Setup(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            _mapper.Setup(m => m.Map<FavouriteProductDTO>(It.IsAny<FavouriteProduct>()))
+            _mapper.Setup(m => m.Map<CatalogueProductDTO>(catalogueProduct))
                 .Returns(dto);
 
             var result = await _favouriteService.AddFavouriteAsync(userId, request);
 
-            Assert.NotNull(result);
-            Assert.Equal("кафе", result.NormalizedName);
+            Assert.Equal(catalogueProduct.Id, result.Id);
+            Assert.Equal("Кафе", result.Name);
+            _userRepository.Verify(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        // ── RemoveFavouriteAsync ──────────────────────────────────────────
+
         [Fact]
-        public async Task RemoveFavourite_WhenNotFound_ThrowsNotFoundException()
+        public async Task RemoveFavourite_UserNotFound_ThrowsNotFoundException()
         {
             var userId = Guid.NewGuid();
-            var favouriteId = Guid.NewGuid();
 
-            _favouriteRepository.Setup(r => r.GetByIdAsync(favouriteId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((FavouriteProduct?)null);
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((User?)null);
 
             await Assert.ThrowsAsync<NotFoundException>(() =>
-                _favouriteService.RemoveFavouriteAsync(userId, favouriteId));
+                _favouriteService.RemoveFavouriteAsync(userId, Guid.NewGuid()));
         }
 
         [Fact]
-        public async Task RemoveFavourite_WhenNotOwner_ThrowsForbiddenException()
+        public async Task RemoveFavourite_ProductNotInFavourites_ThrowsNotFoundException()
         {
             var userId = Guid.NewGuid();
-            var otherUserId = Guid.NewGuid();
-            var favouriteId = Guid.NewGuid();
+            var user = new User { Id = userId, Favourites = new List<CatalogueProduct>() };
 
-            _favouriteRepository.Setup(r => r.GetByIdAsync(favouriteId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FavouriteProduct { Id = favouriteId, UserId = otherUserId });
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
 
-            await Assert.ThrowsAsync<ForbiddenException>(() =>
-                _favouriteService.RemoveFavouriteAsync(userId, favouriteId));
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _favouriteService.RemoveFavouriteAsync(userId, Guid.NewGuid()));
         }
 
         [Fact]
-        public async Task RemoveFavourite_WhenOwner_DeletesSuccessfully()
+        public async Task RemoveFavourite_ValidRequest_RemovesAndSaves()
         {
             var userId = Guid.NewGuid();
-            var favouriteId = Guid.NewGuid();
-            var favourite = new FavouriteProduct { Id = favouriteId, UserId = userId };
+            var catalogueProduct = new CatalogueProduct { Id = Guid.NewGuid(), Name = "Кафе" };
+            var user = new User { Id = userId, Favourites = new List<CatalogueProduct> { catalogueProduct } };
 
-            _favouriteRepository.Setup(r => r.GetByIdAsync(favouriteId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(favourite);
-            _favouriteRepository.Setup(r => r.DeleteAsync(favourite, It.IsAny<CancellationToken>()))
+            _userRepository.Setup(r => r.GetWithFavouritesAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
+            _userRepository.Setup(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _favouriteService.RemoveFavouriteAsync(userId, favouriteId);
+            await _favouriteService.RemoveFavouriteAsync(userId, catalogueProduct.Id);
 
-            _favouriteRepository.Verify(r => r.DeleteAsync(favourite, It.IsAny<CancellationToken>()), Times.Once);
+            Assert.Empty(user.Favourites);
+            _userRepository.Verify(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
