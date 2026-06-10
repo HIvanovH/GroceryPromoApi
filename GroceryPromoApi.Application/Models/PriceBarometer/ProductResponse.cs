@@ -14,13 +14,13 @@ public class ProductResponse
     public string? Description { get; set; }
 
     [JsonPropertyName("price_lev")]
-    public decimal PriceLev { get; set; }
+    public decimal? PriceLev { get; set; }
 
     [JsonPropertyName("old_price_lev")]
     public decimal? OldPriceLev { get; set; }
 
     [JsonPropertyName("price_eur")]
-    public decimal PriceEur { get; set; }
+    public decimal? PriceEur { get; set; }
 
     [JsonPropertyName("old_price_eur")]
     public decimal? OldPriceEur { get; set; }

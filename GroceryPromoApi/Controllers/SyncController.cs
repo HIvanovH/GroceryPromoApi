@@ -15,7 +15,6 @@ public class SyncController : ControllerBase
         _syncService = syncService;
     }
 
-    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Sync(CancellationToken cancellationToken)
     {
