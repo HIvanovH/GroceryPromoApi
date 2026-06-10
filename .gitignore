@@ -8,10 +8,10 @@
 
 # HTTP client private environment (contains API keys)
 http-client.private.env.json
-# User secrets
-**/appsettings.Development.json
+# Config — Development is committed (private repo, dev secrets only)
 **/appsettings.*.json
 !**/appsettings.json
+!**/appsettings.Development.json
 
 # Firebase service account key
 **/firebase-key.json
@@ -21,6 +21,8 @@ docker-compose.override.yml
 
 # Local notes
 NOTES.md
+AGENTS.md
+CLAUDE.md
 S
 # User-specific files
 *.rsuser

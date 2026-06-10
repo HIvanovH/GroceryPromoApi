@@ -187,6 +187,9 @@ public class SyncService : ISyncService
                 if (seenExternalIds.Contains(p.Id))
                     continue;
 
+                if (p.PriceEur is null)
+                    continue;
+
                 seenExternalIds.Add(p.Id);
                 var normalizedName = p.Name.ToLower().Trim();
                 var normalizedQuantity = QuantityNormalizer.Normalize(p.Quantity);
@@ -220,7 +223,7 @@ public class SyncService : ISyncService
                     Id = Guid.NewGuid(),
                     CatalogueProductId = catalogueProduct.Id,
                     SupermarketId = supermarket.Id,
-                    CurrentPriceEur = p.PriceEur,
+                    CurrentPriceEur = p.PriceEur!.Value,
                     NormalPriceEur = p.OldPriceEur,
                     PromoValidUntil = brochure.ValidUntil
                 }, cancellationToken);
@@ -232,9 +235,9 @@ public class SyncService : ISyncService
                     Name = p.Name,
                     NormalizedName = p.Name.ToLower().Trim(),
                     Description = p.Description,
-                    PriceLev = p.PriceLev,
+                    PriceLev = p.PriceLev ?? 0,
                     OldPriceLev = p.OldPriceLev,
-                    PriceEur = p.PriceEur,
+                    PriceEur = p.PriceEur!.Value,
                     OldPriceEur = p.OldPriceEur,
                     Discount = p.Discount,
                     Quantity = p.Quantity,
