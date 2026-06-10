@@ -4,7 +4,7 @@ A REST API for tracking grocery promotions across Bulgarian supermarkets (Kaufla
 
 ## Tech Stack
 
-- **ASP.NET Core 9** — Web API, Clean Architecture
+- **ASP.NET Core 8** — Web API, Clean Architecture
 - **PostgreSQL** — primary database via EF Core
 - **.NET Aspire** — local orchestration and service discovery
 - **Firebase FCM** — push notifications
@@ -49,7 +49,7 @@ GroceryPromoApi.AppHost         — .NET Aspire host
 
 ## Getting Started
 
-**Prerequisites:** .NET 9 SDK, Docker Desktop, Price Barometer API key
+**Prerequisites:** .NET 8 SDK, Docker Desktop, Price Barometer API key
 
 ```bash
 # Set your API key in User Secrets
